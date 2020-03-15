@@ -1,6 +1,10 @@
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <MCUFRIEND_kbv.h>   // Hardware-specific library
+#include <Adafruit_GFX.h>       // Core graphics library
+#include <MCUFRIEND_kbv.h>      // Hardware-specific library
 MCUFRIEND_kbv tft;
+
+#include <DS3231M.h>            // Include the DS3231M RTC library
+DS3231M_Class DS3231M;          // Create an instance of the DS3231M class
+
 
 /* 
  *  Tutorial für tft
@@ -79,18 +83,30 @@ const uint8_t AlarmButton[] PROGMEM = {
 };
 
 
-//RTC
-    int h = 16;
-    int m = 16;
-    int s = 38;
-    int t = 12; // Temp
-   
-    String H="", M="", S="", T = "", D="08.03.2020";
-    boolean h_skip, m_skip, d_skip;
+//global RTC variables
+static uint8_t secs=16, min=16, hour=16, t=16;
+
+String H="", M="", S="", T = "", D="16.16.1616";
+boolean h_skip, m_skip, d_skip;
     
 void setup(void)
 {
-    Serial.begin(9600);
+    Serial.begin(9600);         // Serial Monitor Setup
+    pinMode(LED_PIN,OUTPUT);    // Make the LED light an output pin
+
+    //-- start init RTC
+    while ( !DS3231M.begin() ) {
+        Serial.println( F("Unable to find DS3231MM. Checking again in 3s.") );
+        delay(3000);
+    } // of loop until device is located
+
+    DS3231M.pinSquareWave(); // Make INT/SQW pin toggle at 1Hz
+    Serial.println(F("DS3231M initialized."));
+
+    DS3231M.adjust(); // Set to library compile Date/Time
+    Serial.print(F("DS3231M chip temperature is "));
+    Serial.print(DS3231M.temperature()/100.0,1); // Value is in 100ths of a degree
+    Serial.println("\xC2\xB0""C");
     
     uint16_t ID = tft.readID();
     Serial.println("starting Carl's MP3 Alarm Clock");
@@ -120,34 +136,42 @@ void setup(void)
 
     tft.drawBitmap( 180,190, PlayButton, 50,50, BLACK);
     tft.drawBitmap( 240,190, AlarmButton, 50,50, BLACK);
-
-  
 }
 
 
-void loop(void)
-{
+void loop(void)  {  
+  DateTime now = DS3231M.now(); // get the current time from device
     
-    s++; // next sec
-    t = 13; // todo vom RTC holen
-    
-    if( s == 60 ) { s = 0; m++; m_skip=true; } else m_skip = false;
-    if( m == 60 ) { m=0; h++; h_skip=true; } else h_skip = false;
-    if( h == 24 ) { h=0; m=0; s=0; d_skip = true;}
-
-    if( m_skip ) showTemperature();
-    if( d_skip ) showDate();
-    
+  // Output if seconds have changed
+  if ( secs != now.second() ) {
+    // Use sprintf() to pretty print the date/time with leading zeros 
+    char output_buffer[SPRINTF_BUFFER_SIZE]; ///< Temporary buffer for sprintf()
+    sprintf(output_buffer,"%04d-%02d-%02d %02d:%02d:%02d", now.year(), now.month(),now.day(), now.hour(), now.minute(), now.second());
+    Serial.println(output_buffer);
+    secs = now.second(); // Set the counter variable
+      
+    if( min != now.minute() ) {
+        min = now.minute();
+        m_skip = true;
+        showTemperature();
+    }
+    if( hour != now.hour() ) {
+        hour = now.hour();
+        h_skip = true;
+        showDate( now );
+    }        
     showTime();
-    delay(675);
+  } // of if the seconds have changed
+
+  delay(675);
 }
 
-void showDate() {
+void showDate( now ) {
     tft.setFont(&FreeSerif12pt7b);
     deleteMsg( 350,50,1, D );
     deleteMsg( 350,75,1, "Montag" );
 
-    D = D;  // muss von RTC geholt werden
+    D = String( String( now.day() ) + "." + String( now.month() ) + "." + now.year()) 
     showmsgXY( 350,50, 1, D );
     showmsgXY( 350,75,1, "Montag" );
 }
@@ -155,7 +179,7 @@ void showDate() {
 void showTemperature() {
     tft.setFont(&FreeSerif12pt7b);
     deleteMsg( 50,50,1, T );
-    T = String(t);
+    T = String(DS3231M.temperature()/100.0);
     showmsgXY( 50,50, 1, T + " °C" );
 }
 void showTime() {
@@ -193,14 +217,14 @@ void deleteMsg( int x, int y, int sz, String msg ) {
 void buildTimeStrings() {
     // build String for SEC
     
-    if( s < 10 ) S = "0"; else S = "";
-    S += String( s );
+    if( sec < 10 ) S = "0"; else S = "";
+    S += String( sec );
 
     // build String for MIN
-    if( m < 10 ) M = "0"; else M ="";
-    M += String(m);
+    if( min < 10 ) M = "0"; else M ="";
+    M += String(min);
     
     // build String for hour, display only when changed or 1stTime
-    if( h < 10 ) H = "0"; else H = "";
-    H+= String(h);
+    if( hour < 10 ) H = "0"; else H = "";
+    H+= String(hour);
 }
