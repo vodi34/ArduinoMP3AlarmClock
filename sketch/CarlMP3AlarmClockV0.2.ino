@@ -12,7 +12,7 @@ DS3231M_Class DS3231M;          // Create an instance of the DS3231M class
  */
 
 #include <Fonts/FreeSans9pt7b.h>
-#include <Fonts/FreeSans12pt7b.h>
+//#include <Fonts/FreeSans12pt7b.h>
 #include <Fonts/FreeSerif12pt7b.h>
 #include <FreeDefaultFonts.h>
 
@@ -84,8 +84,12 @@ const uint8_t AlarmButton[] PROGMEM = {
 
 
 //global RTC variables
-static uint8_t secs=16, min=16, hour=16, t=16;
+const uint8_t  LED_PIN             =     13; ///< Built-in Arduino green LED pin
+const uint32_t SERIAL_SPEED        = 115200; ///< Set the baud rate for Serial I/O
+const uint8_t  SPRINTF_BUFFER_SIZE =     32; ///< Buffer size for sprintf()
 
+static uint8_t secs=16, min=16, hour=16, t=16;
+DateTime now = DS3231M.now(); // get the current time from device
 String H="", M="", S="", T = "", D="16.16.1616";
 boolean h_skip, m_skip, d_skip;
     
@@ -140,7 +144,7 @@ void setup(void)
 
 
 void loop(void)  {  
-  DateTime now = DS3231M.now(); // get the current time from device
+  now = DS3231M.now(); // get the current time from device
     
   // Output if seconds have changed
   if ( secs != now.second() ) {
@@ -158,7 +162,7 @@ void loop(void)  {
     if( hour != now.hour() ) {
         hour = now.hour();
         h_skip = true;
-        showDate( now );
+        showDate();
     }        
     showTime();
   } // of if the seconds have changed
@@ -166,12 +170,12 @@ void loop(void)  {
   delay(675);
 }
 
-void showDate( now ) {
+void showDate() {
     tft.setFont(&FreeSerif12pt7b);
     deleteMsg( 350,50,1, D );
     deleteMsg( 350,75,1, "Montag" );
 
-    D = String( String( now.day() ) + "." + String( now.month() ) + "." + now.year()) 
+    D = String( String( now.day() ) + "." + String( now.month() ) + "." + now.year());
     showmsgXY( 350,50, 1, D );
     showmsgXY( 350,75,1, "Montag" );
 }
@@ -217,8 +221,8 @@ void deleteMsg( int x, int y, int sz, String msg ) {
 void buildTimeStrings() {
     // build String for SEC
     
-    if( sec < 10 ) S = "0"; else S = "";
-    S += String( sec );
+    if( secs < 10 ) S = "0"; else S = "";
+    S += String( secs );
 
     // build String for MIN
     if( min < 10 ) M = "0"; else M ="";
