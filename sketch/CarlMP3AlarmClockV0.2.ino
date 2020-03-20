@@ -84,57 +84,50 @@ const uint8_t AlarmButton[] PROGMEM = {
 
 
 //global RTC variables
-const uint8_t  LED_PIN             =     13; ///< Built-in Arduino green LED pin
-const uint32_t SERIAL_SPEED        = 115200; ///< Set the baud rate for Serial I/O
-const uint8_t  SPRINTF_BUFFER_SIZE =     32; ///< Buffer size for sprintf()
+//const uint8_t  LED_PIN             =     13; ///< Built-in Arduino green LED pin
+//const uint32_t SERIAL_SPEED        = 115200; ///< Set the baud rate for Serial I/O
+//const uint8_t  SPRINTF_BUFFER_SIZE =     32; ///< Buffer size for sprintf()
 
 static uint8_t secs=16, min=16, hour=16, t=16;
 DateTime now = DS3231M.now(); // get the current time from device
-String H="", M="", S="", T = "", D="16.16.1616";
+String H="", M="", S="", T = "", D="";
 boolean h_skip, m_skip, d_skip;
     
 void setup(void)
 {
-    Serial.begin(9600);         // Serial Monitor Setup
-    pinMode(LED_PIN,OUTPUT);    // Make the LED light an output pin
+    Serial.begin(115200);         // Serial Monitor Setup
+    //pinMode(LED_PIN,OUTPUT);    // Make the LED light an output pin
 
     //-- start init RTC
     while ( !DS3231M.begin() ) {
-        Serial.println( F("Unable to find DS3231MM. Checking again in 3s.") );
+        Serial.println( "DS3231MM not found");
         delay(3000);
     } // of loop until device is located
 
     DS3231M.pinSquareWave(); // Make INT/SQW pin toggle at 1Hz
-    Serial.println(F("DS3231M initialized."));
-
     DS3231M.adjust(); // Set to library compile Date/Time
-    Serial.print(F("DS3231M chip temperature is "));
-    Serial.print(DS3231M.temperature()/100.0,1); // Value is in 100ths of a degree
-    Serial.println("\xC2\xB0""C");
     
     uint16_t ID = tft.readID();
-    Serial.println("starting Carl's MP3 Alarm Clock");
-    Serial.print("found TFT.ID = 0x");
+    Serial.print("found TFT.ID=0x");
     Serial.println(ID, HEX);
     
     if (ID == 0xD3D3) ID = 0x9481; //force ID if write-only display
     tft.begin(ID);
     tft.setRotation(3); 
-    Serial.println( "TFT.setRotation: 3");
-
     
-    Serial.println( "TFT.setFont: FreeSevenSegNumFont" );
-    tft.setFont(&FreeSevenSegNumFont);
+    //tft.setFont(&FreeSevenSegNumFont);
     tft.setTextColor(BLACK);  
     tft.fillScreen(WHITE); // löscht den Screen komplett
 
+    /*
     buildTimeStrings();
     showmsgXY(140, 180, 1, H );
     showmsgXY(220, 180, 1, M );
     showmsgXY(300, 180, 1, S );
     showTemperature();
     showDate();
-
+    */
+    
     tft.setFont(&FreeSans9pt7b);
     showmsgXY( 8, 300, 1, "MP3 Alarm Clock V0.1 (c) Carl Dietzel 2020" );
 
@@ -149,9 +142,9 @@ void loop(void)  {
   // Output if seconds have changed
   if ( secs != now.second() ) {
     // Use sprintf() to pretty print the date/time with leading zeros 
-    char output_buffer[SPRINTF_BUFFER_SIZE]; ///< Temporary buffer for sprintf()
-    sprintf(output_buffer,"%04d-%02d-%02d %02d:%02d:%02d", now.year(), now.month(),now.day(), now.hour(), now.minute(), now.second());
-    Serial.println(output_buffer);
+    //char output_buffer[SPRINTF_BUFFER_SIZE]; ///< Temporary buffer for sprintf()
+    //sprintf(output_buffer,"%04d-%02d-%02d %02d:%02d:%02d", now.year(), now.month(),now.day(), now.hour(), now.minute(), now.second());
+    //Serial.println(output_buffer);
     secs = now.second(); // Set the counter variable
       
     if( min != now.minute() ) {
@@ -173,11 +166,11 @@ void loop(void)  {
 void showDate() {
     tft.setFont(&FreeSerif12pt7b);
     deleteMsg( 350,50,1, D );
-    deleteMsg( 350,75,1, "Montag" );
+    //deleteMsg( 350,75,1, "Montag" );
 
     D = String( String( now.day() ) + "." + String( now.month() ) + "." + now.year());
     showmsgXY( 350,50, 1, D );
-    showmsgXY( 350,75,1, "Montag" );
+    //showmsgXY( 350,75,1, "Montag" );
 }
 
 void showTemperature() {
@@ -187,7 +180,7 @@ void showTemperature() {
     showmsgXY( 50,50, 1, T + " °C" );
 }
 void showTime() {
-    Serial.println( "TFT.setFont: FreeSevenSegNumFont" );
+    //Serial.println( "TFT.setFont: FreeSevenSegNumFont" );
     tft.setFont(&FreeSevenSegNumFont);
 
     // clean screen from old message 
