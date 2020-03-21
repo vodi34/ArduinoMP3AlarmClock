@@ -89,23 +89,25 @@ const uint8_t AlarmButton[] PROGMEM = {
 //const uint8_t  SPRINTF_BUFFER_SIZE =     32; ///< Buffer size for sprintf()
 
 static uint8_t secs=16, min=16, hour=16, t=16;
-DateTime now = DS3231M.now(); // get the current time from device
 String H="", M="", S="", T = "", D="";
 boolean h_skip, m_skip, d_skip;
     
 void setup(void)
 {
-    Serial.begin(115200);         // Serial Monitor Setup
-    //pinMode(LED_PIN,OUTPUT);    // Make the LED light an output pin
-
+    Serial.begin(9600);         // Serial Monitor Setup
+    #ifdef  __AVR_ATmega32U4__  // If this is a 32U4 processor, then wait for the serial interface to initialize
+        delay(3000);
+    #endif
+    
     //-- start init RTC
     while ( !DS3231M.begin() ) {
-        Serial.println( "DS3231MM not found");
+        Serial.print( F("\nDS3231MM not ok"));
         delay(3000);
     } // of loop until device is located
 
     DS3231M.pinSquareWave(); // Make INT/SQW pin toggle at 1Hz
     DS3231M.adjust(); // Set to library compile Date/Time
+    Serial.print( F("\nDS3231MM now ok init done"));
     
     uint16_t ID = tft.readID();
     Serial.print("found TFT.ID=0x");
@@ -133,11 +135,16 @@ void setup(void)
 
     tft.drawBitmap( 180,190, PlayButton, 50,50, BLACK);
     tft.drawBitmap( 240,190, AlarmButton, 50,50, BLACK);
+
+    // if all the init's are okay we set LED to GREEN - not blinking
+    pinMode(13,OUTPUT);    // Make the LED light an output pin
+
 }
 
 
 void loop(void)  {  
-  now = DS3231M.now(); // get the current time from device
+    
+  DateTime now = DS3231M.now(); // get the current time from device
     
   // Output if seconds have changed
   if ( secs != now.second() ) {
@@ -155,7 +162,7 @@ void loop(void)  {
     if( hour != now.hour() ) {
         hour = now.hour();
         h_skip = true;
-        showDate();
+        showDate( now );
     }        
     showTime();
   } // of if the seconds have changed
@@ -163,7 +170,7 @@ void loop(void)  {
   delay(675);
 }
 
-void showDate() {
+void showDate( DateTime now ) {
     tft.setFont(&FreeSerif12pt7b);
     deleteMsg( 350,50,1, D );
     //deleteMsg( 350,75,1, "Montag" );
