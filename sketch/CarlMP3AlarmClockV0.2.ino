@@ -88,7 +88,7 @@ const uint8_t AlarmButton[] PROGMEM = {
 //const uint32_t SERIAL_SPEED        = 115200; ///< Set the baud rate for Serial I/O
 //const uint8_t  SPRINTF_BUFFER_SIZE =     32; ///< Buffer size for sprintf()
 
-static uint8_t secs=16, min=16, hour=16, t=16;
+static uint8_t secs=61, min=61, hour=61, t=61;
 String H="", M="", S="", T = "", D="";
 boolean h_skip, m_skip, d_skip;
     
