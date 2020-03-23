@@ -92,12 +92,9 @@ static uint8_t secs=61, min=61, hour=61, t=61;
 String H="", M="", S="", T = "", D="";
 boolean h_skip, m_skip, d_skip;
     
-void setup(void)
-{
+void setup(void) {
     Serial.begin(9600);         // Serial Monitor Setup
-    #ifdef  __AVR_ATmega32U4__  // If this is a 32U4 processor, then wait for the serial interface to initialize
-        delay(3000);
-    #endif
+    //pinMode(13,OUTPUT);    // Make the LED light an output pin
     
     //-- start init RTC
     while ( !DS3231M.begin() ) {
@@ -105,7 +102,7 @@ void setup(void)
         delay(3000);
     } // of loop until device is located
 
-    DS3231M.pinSquareWave(); // Make INT/SQW pin toggle at 1Hz
+    //DS3231M.pinSquareWave(); // Make INT/SQW pin toggle at 1Hz
     DS3231M.adjust(); // Set to library compile Date/Time
     Serial.print( F("\nDS3231MM now ok init done\n"));
     
