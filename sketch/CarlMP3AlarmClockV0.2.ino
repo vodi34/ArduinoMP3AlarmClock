@@ -123,19 +123,14 @@ void setup(void)
     tft.fillScreen(WHITE); // löscht den Screen komplett
     Serial.print( F("\nfillScreen white"));
     
-    buildTimeStrings();
-    showmsgXY(140, 180, 1, H );
-    showmsgXY(220, 180, 1, M );
-    showmsgXY(300, 180, 1, S );
-    showTemperature();
-    showDate();
-    
     tft.setFont(&FreeSans9pt7b);
     showmsgXY( 8, 300, 1, "MP3 Alarm Clock V0.1 (c) Carl Dietzel 2020" );
-
+    Serial.print( F("\nprint (c)2020"));
+    
     tft.drawBitmap( 180,190, PlayButton, 50,50, BLACK);
     tft.drawBitmap( 240,190, AlarmButton, 50,50, BLACK);
-
+    Serial.print( F("\ndrawbUTTONS"));
+    
     // if all the init's are okay we set LED to GREEN - not blinking
     pinMode(13,OUTPUT);    // Make the LED light an output pin
 
@@ -143,7 +138,7 @@ void setup(void)
 
 
 void loop(void)  {  
-    
+ Serial.print( F("INSIDE LOOP"));   
   DateTime now = DS3231M.now(); // get the current time from device
     
   // Output if seconds have changed
