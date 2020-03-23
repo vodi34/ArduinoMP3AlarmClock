@@ -138,7 +138,7 @@ void setup(void)
 
 
 void loop(void)  {  
- Serial.print( F("INSIDE LOOP"));   
+ Serial.print( F("\nINSIDE LOOP"));   
   DateTime now = DS3231M.now(); // get the current time from device
     
   // Output if seconds have changed
