@@ -107,7 +107,7 @@ void setup(void)
 
     DS3231M.pinSquareWave(); // Make INT/SQW pin toggle at 1Hz
     DS3231M.adjust(); // Set to library compile Date/Time
-    Serial.print( F("\nDS3231MM now ok init done"));
+    Serial.print( F("\nDS3231MM now ok init done\n"));
     
     uint16_t ID = tft.readID();
     Serial.print("found TFT.ID=0x");
@@ -116,19 +116,19 @@ void setup(void)
     if (ID == 0xD3D3) ID = 0x9481; //force ID if write-only display
     tft.begin(ID);
     tft.setRotation(3); 
+    Serial.print( F("\nTFT.begin"));
     
     //tft.setFont(&FreeSevenSegNumFont);
     tft.setTextColor(BLACK);  
     tft.fillScreen(WHITE); // löscht den Screen komplett
-
-    /*
+    Serial.print( F("\nfillScreen white"));
+    
     buildTimeStrings();
     showmsgXY(140, 180, 1, H );
     showmsgXY(220, 180, 1, M );
     showmsgXY(300, 180, 1, S );
     showTemperature();
     showDate();
-    */
     
     tft.setFont(&FreeSans9pt7b);
     showmsgXY( 8, 300, 1, "MP3 Alarm Clock V0.1 (c) Carl Dietzel 2020" );
