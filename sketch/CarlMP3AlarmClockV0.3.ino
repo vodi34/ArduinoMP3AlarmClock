@@ -165,18 +165,26 @@ void setup(void)
       while(true);
     }
 
-    delay( 5000 );
+    
     Serial.println( "DFPlayer Mini init done :-)" );
 
     myDFPlayer.volume(20);  //Set volume value. From 0 to 30
-    
-    if (myDFPlayer.available()) {
-      printDetail(myDFPlayer.readType(), myDFPlayer.read()); 
-      //Print the detail message from DFPlayer to handle different errors and states.
-    }
-    
-    myDFPlayer.play(1);  //Play the first mp3
+ 
+    myDFPlayer.volumeUp(); //Volume Up
+    myDFPlayer.volumeDown(); //Volume Down
 
+    //----Set different EQ----
+    myDFPlayer.EQ(DFPLAYER_EQ_NORMAL);
+    //  myDFPlayer.EQ(DFPLAYER_EQ_POP);
+    //  myDFPlayer.EQ(DFPLAYER_EQ_ROCK);
+    //  myDFPlayer.EQ(DFPLAYER_EQ_JAZZ);
+    //  myDFPlayer.EQ(DFPLAYER_EQ_CLASSIC);
+    //  myDFPlayer.EQ(DFPLAYER_EQ_BASS);
+  
+    //myDFPlayer.play(1);  //Play the first mp3
+  
+    delay( 5000 );
+  
 }
 
 
@@ -189,10 +197,6 @@ void loop(void)  {
   Serial.print( ":" );
   Serial.println( now.second() );
   
-  //if (myDFPlayer.available()) {
-      printDetail(myDFPlayer.readType(), myDFPlayer.read()); 
-      //Print the detail message from DFPlayer to handle different errors and states.
-  //}
   // Output if seconds have changed
   if ( secs != now.second() ) {
     // Use sprintf() to pretty print the date/time with leading zeros 
@@ -202,10 +206,18 @@ void loop(void)  {
     secs = now.second(); // Set the counter variable
       
     if( min != now.minute() ) {
+        Serial.print( "min :" ) ;
+        Serial.println( min );
+        Serial.print( "now.minute()" );
+        Serial.println( now.minute() );
+        Serial.println( "DFPlayer next()" );
+        myDFPlayer.next();
+        //printDetail(myDFPlayer.readType(), myDFPlayer.read()); 
         min = now.minute();
         m_skip = true;
         showTemperature();
     }
+    
     if( hour != now.hour() ) {
         hour = now.hour();
         h_skip = true;
@@ -281,6 +293,7 @@ void buildTimeStrings() {
 }
 
 void printDetail(uint8_t type, int value){
+  Serial.print( "DFPlayer :" );
   switch (type) {
     case TimeOut:
       Serial.println(F("Time Out!"));
