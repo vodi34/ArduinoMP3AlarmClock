@@ -35,16 +35,17 @@ void printDetail(uint8_t type, int value);
 #define SPRINTF_BUFFER_SIZE 32                 // needed in readcommand
 
 static uint8_t secs=61, min=61, hour=61, t=61;
-static uint8_t alarmMin = -1, alarmHour = -1;
+static uint8_t alarmMin = 255, alarmHour = 255;
 static String H="", M="", S="", T = "", D="";
 
 boolean h_skip, m_skip, d_skip;
 boolean alarmSet = false;
 boolean alarmON = false;
-boolean alarmOFF = true;
 
 #include <stdint.h>
 #include "TouchScreen.h"
+#define MINPRESSURE 10
+#define MAXPRESSURE 100
 
 // defintions for TouchScreen
 // For better pressure precision, we need to know the resistance
@@ -54,8 +55,38 @@ boolean alarmOFF = true;
 #define XM A3  // must be an analog pin, use "An" notation!
 #define YM 8   // can be a digital pin
 #define XP 9   // can be a digital pin
+#define TS_LEFT 907
+#define TS_RT 136
+#define TS_TOP 942
+#define TS_BOT 139
+
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
-static long doubleClickStart;
+Adafruit_GFX_Button on_btn;
+Adafruit_GFX_Button set_btn;
+
+static int pixel_x, pixel_y;     //Touch_getXY() updates global vars
+bool Touch_getXY(void) {
+    //digitalWrite(13, HIGH);
+    TSPoint p = ts.getPoint();
+    //digitalWrite(13, LOW);
+
+    pinMode(YP, OUTPUT);      //restore shared pins
+    pinMode(XM, OUTPUT);
+    //digitalWrite(YP, HIGH);   //because TFT control pins
+    //digitalWrite(XM, HIGH);
+
+    bool pressed = (p.z > MINPRESSURE && p.z < MAXPRESSURE);
+    if (pressed) {
+        Serial.print( "Touch Event:" );
+        Serial.print("X = "); Serial.print(p.x);
+        Serial.print("\tY = "); Serial.print(p.y);
+        Serial.print("\tPressure = "); Serial.println(p.z);
+        pixel_x = map(p.x, TS_LEFT, TS_RT, 0, tft.width());
+        pixel_y = map(p.y, TS_TOP, TS_BOT, 0, tft.height());
+    }
+    return pressed;
+}
+
 
 void setup(void) {
     // init serial bus for MP3 player
@@ -63,12 +94,7 @@ void setup(void) {
     
     Serial.begin(SERIAL_SPEED);         // Serial Monitor Setup
     Serial.println( "starting with setup for Carl's MP3 Alarm Clock" );
-  
-    #ifdef  __AVR_ATmega32U4__  // If this is a 32U4 processor, then wait for the serial interface to initialize
-        Serial.println( "AVR ATmega32U4 found");
-        delay(3000);
-    #endif
-    
+      
     //-- start init RTC
     Serial.println( "start init DS3231M RTC module" );
     while ( !DS3231M.begin() ) {
@@ -105,9 +131,8 @@ void setup(void) {
       while(true);
     }
     Serial.println( "DFPlayer Mini init done :-)" );
-    myDFPlayer.volume(20);  //Set volume value. From 0 to 30
- 
-    myDFPlayer.volumeUp(); //Volume Up
+    myDFPlayer.volume(20);   //Set volume value. From 0 to 30
+    myDFPlayer.volumeUp();   //Volume Up
     myDFPlayer.volumeDown(); //Volume Down
 
     //----Set different EQ----
@@ -118,83 +143,70 @@ void setup(void) {
     //  myDFPlayer.EQ(DFPLAYER_EQ_CLASSIC);
     //  myDFPlayer.EQ(DFPLAYER_EQ_BASS);
 
-    showAlarm();
+    showAlarm();    
     delay( 1000 ); // lets wait a second for all proper inits
 }
 
 void loop(void)  {  
 
+  // handle commands from SerialMonitor at first
   readCommand();
 
   DateTime now = DS3231M.now(); // get the current time from device
 
   // TouchPoint abholen
-  digitalWrite(13, HIGH);
-  TSPoint p = ts.getPoint();
-  digitalWrite(13, LOW);
-  pinMode(XM, OUTPUT);
-  pinMode(YP, OUTPUT);
+  bool down = Touch_getXY();
   
-  // we have some minimum pressure we consider 'valid'
-  // pressure of 0 means no pressing!
-  //if (p.z > ts.pressureThreshhold) {
-  if (p.z > 0 ) {
-     Serial.print( "Touch Event:" );
-     Serial.print("X = "); Serial.print(p.x);
-     Serial.print("\tY = "); Serial.print(p.y);
-     Serial.print("\tPressure = "); Serial.println(p.z);
-     Serial.println( String(now.secondstime() ) );
-
-     // Single press
-     if( alarmON ) {
+  if( down ) {    
+    Serial.println( "down touch found" );
+    if( on_btn.contains(pixel_x, pixel_y) > 0 ) {
+        Serial.println( "ButtonTouch Found" );
+        alarmSet = !alarmSet;
+        
+        // special case: powerON & button ON; set DEfault Time for Alarm
+        Serial.println( alarmSet );
+        Serial.println( alarmMin );
+        if( alarmSet && alarmMin == 255 ) {
+          alarmMin = 0;
+          alarmHour = 12;
+          alarmSet = true;
+        }
+        showAlarm();
+        delay( 1000 );
+     }
+     else if( set_btn.contains(pixel_x, pixel_y) > 0 ) {
+      Serial.println( "set button pressed" );
+      alarmMin ++;
+      if( alarmMin == 60 ) { alarmMin = 0; alarmHour ++;  }
+      if( alarmHour == 24 ) alarmHour = 0;
+      showAlarm();
+      delay(50); 
+     }
+     // Single press; not pressing any button
+     else if( alarmON ) {
         Serial.println( "Alarm Mode: touch point received to set alarm off" );
         alarmON = false;
-        alarmOFF = true;
         alarmSet = false;
         myDFPlayer.pause();
-        // we have to wait for the next second; otherwise the player will start again
      }
      else {
-        long doubleClickTimeSpan = now.secondstime() - doubleClickStart;
-        Serial.print( "doubleClickStart:"  );
-        Serial.println( doubleClickStart );
-        Serial.print( "Timespan: " );
-        Serial.println( doubleClickTimeSpan );
-        doubleClickStart = now.secondstime();
-
-        if( doubleClickTimeSpan > 3 ) {
-          // single press outside alarm is msuic player next
-          Serial.println( "Player Mode: touch point received to skip to next song" );
-          myDFPlayer.next();
-        }
-        else {
-          Serial.println( "this was a doubleClick" );
-          myDFPlayer.pause();
-        }
-        delay(200);
+        Serial.println( "Player Mode: touch point received to skip to next song" );
+        //myDFPlayer.next();
+        //delay(200);
      }
   }
   
   if( alarmSet ) {
-    if( now.hour() == alarmHour && now.minute() == alarmMin && alarmON == false ){
+    if( now.hour() == alarmHour && now.minute() == alarmMin && alarmON == false ) {
       alarmON = true;
       Serial.println( "alarm ON !!  let the music play" );
       myDFPlayer.play();
-      delay(1100);
-      // lets wait 0.5sec before we can switch off
-    }
-  }
-  else if( alarmOFF ) {
-    // the case when the alarm was disabled; we have to block the actual minute 
-    // to avoid a 2nd alarm
-    if( now.hour() != alarmHour || now.minute() != alarmMin ) {
-      alarmSet = true;
-      alarmOFF = false;
-      Serial.println( "pattern detected to de-block alarmOFF" );
+      delay(2000);
+      // lets wait 2sec before we can switch off
     }
   }
      
-  // Output if seconds have changed
+  // Clock Display if seconds have change
   if ( secs != now.second() ) {
     secs = now.second(); // Set the counter variable
 
@@ -213,6 +225,7 @@ void loop(void)  {
   }
 }
 
+
 void showDate() {
     DateTime now = DS3231M.now(); // get the current time from device
     tft.setFont(&FreeSerif12pt7b);
@@ -222,28 +235,40 @@ void showDate() {
 }
 
 void showTemperature() {
+    tft.setFont(&FreeSerif12pt7b);
     deleteMsg( 270,220,1, T );
     T = String(DS3231M.temperature()/100.0);
     showmsgXY( 270,220,1, T + " °C" );
 }
 
 void showAlarm() {
-
     String alarmString = "Alarm: ";
+    String btnText = "";
+
     if( alarmSet ) {
       if( alarmHour < 10 ) alarmString += "0";
       alarmString += String(alarmHour);
       alarmString += ":";
       if( alarmMin < 10 ) alarmString += "0"; 
       alarmString += String(alarmMin);
+      alarmString += "     ";
+      btnText = "OFF";
     }
-    else
-      alarmString += "OFF    ";
-
-    tft.setFont(&FreeSerif12pt7b);
+    else {
+      alarmString += " not set    ";
+      btnText = "ON";
+    }
     
-    deleteMsg( 50, 300, 1, alarmString );
-    showmsgXY( 50, 300, 1, alarmString );
+    tft.setFont(&FreeSerif12pt7b);   
+    deleteMsg( 120, 300, 1, alarmString );
+    showmsgXY( 120, 300, 1, alarmString );
+    tft.setFont(&FreeSerif12pt7b);
+    set_btn.initButton( &tft, 150, 295, 80, 40, BLACK, GREY, BLACK, "", 2);
+    on_btn.initButton( &tft,  60, 295, 80, 40, BLACK, GREY, BLACK, "", 2);
+    on_btn.drawButton(false);
+    tft.setTextColor(BLACK);  
+    showmsgXY( 38, 300, 1, btnText );    
+    tft.setTextColor(WHITE);  
 
     Serial.print( "showAlarm:" + alarmString );  
 }
@@ -336,8 +361,7 @@ void readCommand()
       commands command;                           // declare enumerated type
       char workBuffer[SPRINTF_BUFFER_SIZE];       // Buffer to hold string compare
       sscanf(text_buffer,"%s %*s",workBuffer);    // Parse the string for first word
-      if (!strcmp(workBuffer, "SETDATE"))
-      {
+      if (!strcmp(workBuffer, "SETDATE")) {
         command = SetDate; // Set command number when found
       }
       else if ( (!strcmp(workBuffer, "SETALARM") ) ){
@@ -411,8 +435,8 @@ void readCommand()
         case DeleteAlarm:
           Serial.println( "Alarm has been deleted" );
           if( alarmON )  myDFPlayer.pause();
-          alarmMin = -1;
-          alarmHour = -1;
+          alarmMin = 255;
+          alarmHour = 255;
           alarmSet = false;
           alarmON = false;
           showAlarm();
