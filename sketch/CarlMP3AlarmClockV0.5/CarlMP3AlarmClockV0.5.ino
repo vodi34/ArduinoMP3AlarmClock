@@ -41,6 +41,7 @@ static String H="", M="", S="", T = "", D="";
 boolean h_skip, m_skip, d_skip;
 boolean alarmSet = false;
 boolean alarmON = false;
+boolean musicON = false;
 
 #include <stdint.h>
 #include "TouchScreen.h"
@@ -156,9 +157,11 @@ void loop(void)  {
 
   // TouchPoint abholen
   bool down = Touch_getXY();
-  
+
+  // wenn ein TouchPoint vorliegt 
   if( down ) {    
     Serial.println( "down touch found" );
+    // prüfen ob der ON/OFF Button gedrück wurde
     if( on_btn.contains(pixel_x, pixel_y) > 0 ) {
         Serial.println( "ButtonTouch Found" );
         alarmSet = !alarmSet;
@@ -174,25 +177,28 @@ void loop(void)  {
         showAlarm();
         delay( 1000 );
      }
+     // prüfen of auf dem Wort Alarm gedrück wurde
      else if( set_btn.contains(pixel_x, pixel_y) > 0 ) {
-      Serial.println( "set button pressed" );
-      alarmSet = true;
-      alarmMin ++;
-      if( alarmMin == 60 ) { alarmMin = 0; alarmHour ++;  }
-      if( alarmHour == 24 ) alarmHour = 0;
-      showAlarm();
+       Serial.println( "set button pressed" );
+       alarmSet = true;
+       alarmMin ++;
+       if( alarmMin == 60 ) { alarmMin = 0; alarmHour ++;  }
+       if( alarmHour == 24 ) alarmHour = 0;
+       showAlarm();
      }
      // Single press; not pressing any button
-     else if( alarmON ) {
-        Serial.println( "Alarm Mode: touch point received to set alarm off" );
+     else if( alarmON || musicON ) {
+        Serial.println( "Alarm Mode: touch point received to set alarm or playing music off" );
         alarmON = false;
-        alarmSet = false;
+        musicON = false;
         myDFPlayer.pause();
+        delay( 2000 );
      }
      else {
-        Serial.println( "Player Mode: touch point received to skip to next song" );
+        Serial.println( "Player Mode: touch point received to start music; we play randomAll" );
         myDFPlayer.randomAll();
-        delay(200);
+        musicON = true;
+        delay(1000);
      }
   }
   
