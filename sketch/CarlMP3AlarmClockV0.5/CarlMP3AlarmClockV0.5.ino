@@ -176,11 +176,11 @@ void loop(void)  {
      }
      else if( set_btn.contains(pixel_x, pixel_y) > 0 ) {
       Serial.println( "set button pressed" );
+      alarmSet = true;
       alarmMin ++;
       if( alarmMin == 60 ) { alarmMin = 0; alarmHour ++;  }
       if( alarmHour == 24 ) alarmHour = 0;
       showAlarm();
-      delay(50); 
      }
      // Single press; not pressing any button
      else if( alarmON ) {
@@ -191,8 +191,8 @@ void loop(void)  {
      }
      else {
         Serial.println( "Player Mode: touch point received to skip to next song" );
-        //myDFPlayer.next();
-        //delay(200);
+        myDFPlayer.randomAll();
+        delay(200);
      }
   }
   
@@ -200,7 +200,7 @@ void loop(void)  {
     if( now.hour() == alarmHour && now.minute() == alarmMin && alarmON == false ) {
       alarmON = true;
       Serial.println( "alarm ON !!  let the music play" );
-      myDFPlayer.play();
+      myDFPlayer.randomAll();
       delay(2000);
       // lets wait 2sec before we can switch off
     }
