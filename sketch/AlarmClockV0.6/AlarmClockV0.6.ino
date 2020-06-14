@@ -194,6 +194,25 @@ void loop(void)  {
 
   DateTime now = DS3231M.now(); // get the current time from device
 
+  // Clock Display if seconds have change
+  if ( secs != now.second() ) {
+    secs = now.second(); // Set the counter variable
+
+    m_skip = (min != now.minute());
+    if( m_skip ) {
+        min = now.minute();
+        showTemperature();
+        alarmON = false;
+    }
+
+    h_skip = (hour != now.hour());
+    if( h_skip ) {
+        hour = now.hour();
+        showDate();
+    }        
+    showTime();
+  }
+
   // TouchPoint abholen
   bool down = Touch_getXY();
 
@@ -214,22 +233,21 @@ void loop(void)  {
           alarmSet = true;
         }
         showAlarm();
-        delay( 1000 );
+        //delay( 1000 );
      }
-     // prüfen of auf dem Wort Alarm gedrück wurde
+     // prüfen of auf dem Alarm gedrück wurde
      else if( set_btn.contains(pixel_x, pixel_y) > 0 ) {
        Serial.println( "set button pressed" );
-       alarmSet = true;
-       setAlarm();
+       alarmSet = true; 
+       setAlarm();  // start Alarm-SET Dialog
        showAlarm();
      }
      // Single press; not pressing any button
      else if( alarmON || musicON ) {
         Serial.println( "Alarm Mode: touch point received to set alarm or playing music off" );
-        alarmON = false;
         musicON = false;
         myDFPlayer.pause();
-        delay( 2000 );
+        delay( 500 );
      }
      else {
         Serial.println( "Player Mode: touch point received to start music; we play randomAll" );
@@ -239,33 +257,15 @@ void loop(void)  {
      }
   }
   
-  if( alarmSet ) {
+  if(alarmSet) {
     if( now.hour() == alarmHour && now.minute() == alarmMin && alarmON == false ) {
       alarmON = true;
       Serial.println( "alarm ON !!  let the music play" );
       myDFPlayer.randomAll();
-      delay(2000);
-      // lets wait 2sec before we can switch off
+      delay(2000); // lets wait 2sec before we can switch off
+      
     }
-  }
-     
-  // Clock Display if seconds have change
-  if ( secs != now.second() ) {
-    secs = now.second(); // Set the counter variable
-
-    m_skip = (min != now.minute());
-    if( m_skip ) {
-        min = now.minute();
-        showTemperature();
-    }
-
-    h_skip = (hour != now.hour());
-    if( h_skip ) {
-        hour = now.hour();
-        showDate();
-    }        
-    showTime();
-  }
+  }     
 }
 
 
@@ -571,6 +571,7 @@ void readCommand()
             if( alarmMin <0 || alarmMin > 59 ) alarmMin = 0;
             if( alarmHour <0 || alarmHour > 23 ) alarmHour = 12;       
             alarmSet = true;
+            alarmON = false;
             showAlarm();
           } 
           break;        
