@@ -111,6 +111,9 @@ bool Touch_getXY(void) {
         Serial.print("\tPressure = "); Serial.println(p.z);
         pixel_x = map(p.x, TS_LEFT, TS_RT, 0, tft.width()) +2;  // Papa Dickfinger -  Spezial Kalibration :-)
         pixel_y = map(p.y, TS_TOP, TS_BOT, 0, tft.height());
+        Serial.print( "map Event:" );
+        Serial.print("pixel_x = "); Serial.print(pixel_x);
+        Serial.print("\tpixel_y = "); Serial.println(pixel_y);
     }
     return pressed;
 }
@@ -224,9 +227,7 @@ void loop(void)  {
         Serial.println( "ButtonTouch Found" );
         alarmSet = !alarmSet;
         
-        // special case: powerON & button ON; set DEfault Time for Alarm
-        Serial.println( alarmSet );
-        Serial.println( alarmMin );
+        // special case: powerON & button ON; set Default Time for Alarm
         if( alarmSet && alarmMin == 255 ) {
           alarmMin = 0;
           alarmHour = 12;
@@ -263,8 +264,7 @@ void loop(void)  {
       alarmON = true;
       Serial.println( "alarm ON !!  let the music play" );
       myDFPlayer.randomAll();
-      delay(2000); // lets wait 2sec before we can switch off
-      
+      delay(2000); // lets wait 2sec before we can switch off      
     }
   }     
 }
@@ -433,7 +433,7 @@ void setAlarm() {
        change = true;
       }
       else if( btn_Exit.contains(pixel_x,pixel_y) > 0 ){
-        Serial.println( "exit aetAlarm" );
+        Serial.println( "exit setAlarm" );
         delay( 1000 );
         break;
       }
