@@ -109,7 +109,7 @@ bool Touch_getXY(void) {
         Serial.print("X = "); Serial.print(p.x);
         Serial.print("\tY = "); Serial.print(p.y);
         Serial.print("\tPressure = "); Serial.println(p.z);
-        pixel_x = map(p.x, TS_LEFT, TS_RT, 0, tft.width());
+        pixel_x = map(p.x, TS_LEFT, TS_RT, 0, tft.width()) +2;  // Papa Dickfinger -  Spezial Kalibration :-)
         pixel_y = map(p.y, TS_TOP, TS_BOT, 0, tft.height());
     }
     return pressed;
@@ -233,7 +233,7 @@ void loop(void)  {
           alarmSet = true;
         }
         showAlarm();
-        //delay( 1000 );
+        delay(1000);  // delay braucht es damit nicht sofort wieder ausgeschaltet wird
      }
      // prüfen of auf dem Alarm gedrück wurde
      else if( set_btn.contains(pixel_x, pixel_y) > 0 ) {
@@ -241,6 +241,7 @@ void loop(void)  {
        alarmSet = true; 
        setAlarm();  // start Alarm-SET Dialog
        showAlarm();
+       //delay(500);
      }
      // Single press; not pressing any button
      else if( alarmON || musicON ) {
@@ -253,7 +254,7 @@ void loop(void)  {
         Serial.println( "Player Mode: touch point received to start music; we play randomAll" );
         myDFPlayer.randomAll();
         musicON = true;
-        delay(1000);
+        delay(300);
      }
   }
   
@@ -405,7 +406,7 @@ void setAlarm() {
  
 
   Adafruit_GFX_Button btn_Exit;
-  btn_Exit.initButton( &tft, 135, 115, 165, 90, WHITE, GREY, BLACK, "-", 2);  // Minute Down
+  btn_Exit.initButton( &tft, 135, 115, 165, 90, WHITE, WHITE, BLACK, "-", 2);  // Minute Down
 
   bool change = false;
   while (true) {
@@ -428,7 +429,7 @@ void setAlarm() {
       }
       else if(btn_MD.contains(pixel_x, pixel_y) > 0) {
        alarmMin --;
-       if( alarmMin == -1 ) { alarmMin = 59; }
+       if( alarmMin == 255 ) { alarmMin = 59; }
        change = true;
       }
       else if( btn_Exit.contains(pixel_x,pixel_y) > 0 ){
@@ -441,7 +442,7 @@ void setAlarm() {
       }
     }
 
-    tft.fillRect(135, 115, 165, 90, GREY );      
+    tft.fillRect(135, 115, 165, 90, WHITE );      
 
     if( alarmMin < 10 ) M = "0"; else M ="";
     M += String(alarmMin);
