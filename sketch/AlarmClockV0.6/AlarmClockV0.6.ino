@@ -30,7 +30,8 @@ DS3231M_Class DS3231M;          // Create an instance of the DS3231M class
 SoftwareSerial mySoftwareSerial(10, 11); // RX, TX
 DFRobotDFPlayerMini myDFPlayer;
 
-/*
+/* Teil 2 Komponenten laden
+ *  
  * TFT Bildschirm ILY9486
  *  Tutorial für tft
  *  https://learn.adafruit.com/adafruit-gfx-graphics-library/graphics-primitives
@@ -118,7 +119,8 @@ bool Touch_getXY(void) {
     return pressed;
 }
 
-/*
+/* Teil 3 Programm setup - einmalig
+ *  
  * unsere setup Funktion
  * diese Funktion wird nur einmal durchlaufen beim Start des Arduinos
  * Hier machen wir Initialisierungen der Module
@@ -190,6 +192,13 @@ void setup(void) {
     //delay( 1000 ); // lets wait a second for proper async inits
 }
 
+
+/*
+ * Teil 4
+ * dieser Teil wird immer und immer wieder durchlaufen
+ * dort findet die Steuerung des Alarms statt
+ * 
+ */
 void loop(void)  {  
 
   // handle commands from SerialMonitor at first
